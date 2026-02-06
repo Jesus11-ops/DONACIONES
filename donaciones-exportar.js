@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // ⚠️ IMPORTANTE: Reemplaza con tu configuración de Firebase del proyecto DONACIONES
 const firebaseConfig = {
@@ -19,8 +20,19 @@ if (!getApps().length) {
 }
 
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Email del administrador
+const ADMIN_EMAIL = 'J3006091729@gmail.com';
 
 window.exportarExcel = async function() {
+  // Verificar permisos - solo el admin puede exportar
+  const user = auth.currentUser;
+  if (!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('⛔ Acceso Denegado\n\nSolo el administrador puede exportar datos.\n\nTu cuenta tiene permisos de solo lectura.');
+    return;
+  }
+  
   const rows = [];
   rows.push([
     "Fecha", 

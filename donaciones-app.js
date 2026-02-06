@@ -20,6 +20,62 @@ const storage = getStorage(app);
 
 console.log("🔥 Firebase Donaciones App conectado");
 
+// ==================== CONTROL DE PERMISOS ====================
+// Email del único usuario con permisos de edición
+const ADMIN_EMAIL = 'J3006091729@gmail.com';
+
+// Variable global para almacenar si el usuario actual es admin
+let esUsuarioAdmin = false;
+
+// Función para verificar si el usuario actual es admin
+function verificarPermisos(userEmail) {
+  esUsuarioAdmin = userEmail?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  console.log(`👤 Usuario: ${userEmail} | Admin: ${esUsuarioAdmin}`);
+  
+  // Mostrar/ocultar elementos según permisos
+  actualizarInterfazSegunPermisos();
+  
+  return esUsuarioAdmin;
+}
+
+// Función para actualizar la interfaz según permisos
+function actualizarInterfazSegunPermisos() {
+  // Ocultar/mostrar sección de registro
+  const seccionRegistro = document.querySelector('.card:has(#fecha)');
+  if (seccionRegistro) {
+    seccionRegistro.style.display = esUsuarioAdmin ? 'block' : 'none';
+  }
+  
+  // Actualizar el header para mostrar el rol del usuario
+  const headerRight = document.querySelector('.header-right');
+  if (headerRight && !document.getElementById('rolUsuario')) {
+    const rolIndicator = document.createElement('span');
+    rolIndicator.id = 'rolUsuario';
+    rolIndicador.style.cssText = 'margin-right: 12px; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem;';
+    
+    if (esUsuarioAdmin) {
+      rolIndicator.textContent = '👑 Administrador';
+      rolIndicator.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      rolIndicator.style.color = 'white';
+    } else {
+      rolIndicator.textContent = '👁️ Solo Lectura';
+      rolIndicator.style.background = '#f3f4f6';
+      rolIndicator.style.color = '#6b7280';
+    }
+    
+    headerRight.insertBefore(rolIndicator, headerRight.firstChild);
+  }
+}
+
+// Función para verificar permisos antes de ejecutar acciones
+function verificarPermisosAccion(nombreAccion) {
+  if (!esUsuarioAdmin) {
+    alert(`⛔ Acceso Denegado\n\nSolo el administrador puede ${nombreAccion}.\n\nTu cuenta tiene permisos de solo lectura.`);
+    return false;
+  }
+  return true;
+}
+
 // ==================== FORMATEO DE NÚMEROS ====================
 // Función para formatear números con separadores de miles
 function formatearNumero(valor) {
@@ -101,11 +157,13 @@ window.addEventListener('DOMContentLoaded', () => {
 // Verificar autenticación
 onAuthStateChanged(auth, user => {
   if (!user) {
-    if (!location.pathname.endsWith('donaciones-index.html') && !location.pathname.endsWith('/')) {
-      window.location.href = 'donaciones-index.html';
+    if (!location.pathname.endsWith('index.html') && !location.pathname.endsWith('/')) {
+      window.location.href = 'index.html';
     }
   } else {
     console.log('Usuario autenticado:', user.email);
+    // Verificar permisos del usuario
+    verificarPermisos(user.email);
   }
 });
 
@@ -113,7 +171,7 @@ onAuthStateChanged(auth, user => {
 window.cerrarSesion = async function(){
   try{
     await signOut(auth);
-    window.location.href = 'donaciones-index.html';
+    window.location.href = 'index.html';
   }catch(e){
     console.error('Error cerrando sesión', e);
     alert('❌ Error al cerrar sesión');
@@ -182,6 +240,11 @@ if(fotoInput){
 // ==================== GUARDAR DONACIÓN ====================
 // Guardar donación
 window.guardarDonacion = async function(){
+  // Verificar permisos
+  if (!verificarPermisosAccion('registrar donaciones')) {
+    return;
+  }
+  
   // Deshabilitar botón para evitar doble clic
   const btnGuardar = event.target;
   const textoOriginal = btnGuardar.textContent;
@@ -220,76 +283,45 @@ window.guardarDonacion = async function(){
       const aportePersonalCongregacion = document.getElementById('aportePersonalCongregacion').value;
       const aportePersonalNombre = document.getElementById('aportePersonalNombre').value;
       const aporteIndividual = obtenerValorNumerico(document.getElementById('aporteIndividual').value);
-      const fotoFile = document.getElementById('foto').files[0];
-
-      if(!aportePersonalCongregacion.trim()){
-        alert('⚠️ Ingrese el nombre de la congregación');
+      
+      // Validaciones
+      if(!aportePersonalCongregacion || !aportePersonalNombre){
+        alert('⚠️ Complete todos los campos requeridos para el aporte personal');
         btnGuardar.disabled = false;
         btnGuardar.textContent = textoOriginal;
         return;
       }
 
-      if(!aportePersonalNombre.trim()){
-        alert('⚠️ Ingrese el nombre de la persona que hace el aporte');
+      if(!aporteIndividual || aporteIndividual <= 0){
+        alert('⚠️ Ingrese un monto válido para el aporte individual');
         btnGuardar.disabled = false;
         btnGuardar.textContent = textoOriginal;
         return;
       }
 
-      if(aporteIndividual <= 0){
-        alert('⚠️ Ingrese un monto válido para el aporte');
-        btnGuardar.disabled = false;
-        btnGuardar.textContent = textoOriginal;
-        return;
-      }
-
+      // Agregar datos de aporte personal
+      donacion.nombreCongregacion = aportePersonalCongregacion.trim();
       donacion.aportePersonal = aportePersonalNombre.trim();
       donacion.aporteIndividual = aporteIndividual;
       donacion.ofrendaSolidaria = 0;
-      donacion.nombreCongregacion = aportePersonalCongregacion.trim();
       donacion.nombrePastor = '';
 
       // Subir foto si existe
+      const fotoFile = document.getElementById('foto').files[0];
       if(fotoFile){
-        console.log('📸 Subiendo foto:', fotoFile.name, 'Tamaño:', (fotoFile.size / 1024 / 1024).toFixed(2), 'MB');
-        
-        // Validar tamaño de archivo (máx 5MB)
-        if(fotoFile.size > 5 * 1024 * 1024){
-          alert('⚠️ La foto es muy grande. El tamaño máximo es 5MB');
-          btnGuardar.disabled = false;
-          btnGuardar.textContent = textoOriginal;
-          return;
-        }
-        
-        // Validar tipo de archivo
-        if(!fotoFile.type.startsWith('image/')){
-          alert('⚠️ Solo se permiten archivos de imagen');
-          btnGuardar.disabled = false;
-          btnGuardar.textContent = textoOriginal;
-          return;
-        }
-        
         btnGuardar.textContent = '📤 Subiendo foto...';
         
-        try {
-          const storageRef = ref(storage, `donaciones/${Date.now()}_${fotoFile.name}`);
-          console.log('📁 Ruta de storage:', storageRef.fullPath);
-          
-          const snapshot = await uploadBytes(storageRef, fotoFile);
-          console.log('✅ Foto subida exitosamente');
-          
-          const fotoURL = await getDownloadURL(snapshot.ref);
-          console.log('🔗 URL obtenida:', fotoURL);
-          
-          donacion.foto = fotoURL;
-          donacion.fotoPath = snapshot.ref.fullPath;
-        } catch(uploadError) {
-          console.error('❌ Error subiendo foto:', uploadError);
-          alert(`❌ Error al subir la foto: ${uploadError.message}\n\nVerifique:\n1. Reglas de Storage en Firebase\n2. Tamaño del archivo (máx 5MB)\n3. Formato de imagen válido`);
-          btnGuardar.disabled = false;
-          btnGuardar.textContent = textoOriginal;
-          return;
-        }
+        const timestamp = Date.now();
+        const nombreArchivo = `${timestamp}_${fotoFile.name}`;
+        const storageRef = ref(storage, `donaciones/${nombreArchivo}`);
+        
+        await uploadBytes(storageRef, fotoFile);
+        const fotoURL = await getDownloadURL(storageRef);
+        
+        donacion.foto = fotoURL;
+        donacion.fotoPath = `donaciones/${nombreArchivo}`;
+        
+        console.log('Foto subida:', fotoURL);
       }
     } else {
       // Es una donación de congregación
@@ -297,141 +329,112 @@ window.guardarDonacion = async function(){
       const nombrePastor = document.getElementById('nombrePastor').value;
       const ofrendaSolidaria = obtenerValorNumerico(document.getElementById('ofrendaSolidaria').value);
 
-      if(!nombreCongregacion.trim()){
-        alert('⚠️ Ingrese el nombre de la congregación');
+      // Validaciones
+      if(!nombreCongregacion || !nombrePastor){
+        alert('⚠️ Complete todos los campos requeridos');
         btnGuardar.disabled = false;
         btnGuardar.textContent = textoOriginal;
         return;
       }
 
-      if(!nombrePastor.trim()){
-        alert('⚠️ Ingrese el nombre del pastor');
-        btnGuardar.disabled = false;
-        btnGuardar.textContent = textoOriginal;
-        return;
-      }
-
-      if(ofrendaSolidaria <= 0){
+      if(!ofrendaSolidaria || ofrendaSolidaria <= 0){
         alert('⚠️ Ingrese un monto válido para la ofrenda solidaria');
         btnGuardar.disabled = false;
         btnGuardar.textContent = textoOriginal;
         return;
       }
 
+      // Agregar datos de congregación
       donacion.nombreCongregacion = nombreCongregacion.trim();
       donacion.nombrePastor = nombrePastor.trim();
       donacion.ofrendaSolidaria = ofrendaSolidaria;
       donacion.aporteIndividual = 0;
+      donacion.aportePersonal = '';
     }
 
     // Guardar en Firestore
-    btnGuardar.textContent = '💾 Guardando en base de datos...';
-    console.log('💾 Guardando donación:', donacion);
-    
+    btnGuardar.textContent = '💾 Guardando...';
     await addDoc(collection(db, 'Donaciones'), donacion);
     
-    console.log('✅ Donación guardada exitosamente');
     alert('✅ Donación guardada correctamente');
-
+    
     // Limpiar formulario
     limpiarFormulario();
-
-  }catch(err){
-    console.error('❌ Error guardando donación:', err);
-    console.error('Detalles del error:', {
-      code: err.code,
-      message: err.message,
-      stack: err.stack
-    });
-    alert(`❌ Error al guardar: ${err.message}\n\nRevise la consola del navegador (F12) para más detalles`);
+    
+  } catch(err) {
+    console.error('Error guardando donación:', err);
+    alert('❌ Error al guardar: ' + err.message);
   } finally {
-    // Rehabilitar botón
     btnGuardar.disabled = false;
     btnGuardar.textContent = textoOriginal;
   }
 }
 
 // ==================== LIMPIAR FORMULARIO ====================
+// Limpiar formulario después de guardar
 function limpiarFormulario(){
-  const campos = ['fecha', 'nombreCongregacion', 'nombrePastor', 'aportePersonalCongregacion', 'aportePersonalNombre'];
-  campos.forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.value = '';
-  });
+  // Restablecer checkbox
+  document.getElementById('esAportePersonal').checked = false;
   
-  // Limpiar campos numéricos con formato
-  const ofrendaInput = document.getElementById('aporteIndividual');
-  const ofrendaHidden = document.getElementById('ofrendaSolidariaValue');
-  if(ofrendaInput) ofrendaInput.value = '0';
-  if(ofrendaHidden) ofrendaHidden.value = '0';
+  // Restablecer fecha a hoy
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('fecha').value = hoy;
   
-  const aporteInput = document.getElementById('aporteIndividual');
-  const aporteHidden = document.getElementById('aporteIndividualValue');
-  if(aporteInput) aporteInput.value = '0';
-  if(aporteHidden) aporteHidden.value = '0';
+  // Limpiar campos de congregación
+  document.getElementById('nombreCongregacion').value = '';
+  document.getElementById('nombrePastor').value = '';
+  document.getElementById('ofrendaSolidaria').value = '0';
+  document.getElementById('ofrendaSolidariaValue').value = '0';
   
-  const checkbox = document.getElementById('esAportePersonal');
-  if(checkbox) checkbox.checked = false;
+  // Limpiar campos de aporte personal
+  document.getElementById('aportePersonalCongregacion').value = '';
+  document.getElementById('aportePersonalNombre').value = '';
+  document.getElementById('aporteIndividual').value = '0';
+  document.getElementById('aporteIndividualValue').value = '0';
+  document.getElementById('foto').value = '';
+  document.getElementById('previewContainer').style.display = 'none';
   
-  const foto = document.getElementById('foto');
-  if(foto) foto.value = '';
-  
-  const preview = document.getElementById('previewContainer');
-  if(preview) preview.style.display = 'none';
-  
-  // Mostrar sección de congregación por defecto
-  const seccionCongregacion = document.getElementById('seccionCongregacion');
-  const seccionAportePersonal = document.getElementById('seccionAportePersonal');
-  if(seccionCongregacion) seccionCongregacion.style.display = 'block';
-  if(seccionAportePersonal) seccionAportePersonal.style.display = 'none';
-  
-  // Poner foco en fecha
-  const fechaEl = document.getElementById('fecha');
-  if(fechaEl) fechaEl.focus();
+  // Mostrar sección correcta
+  document.getElementById('seccionCongregacion').style.display = 'block';
+  document.getElementById('seccionAportePersonal').style.display = 'none';
 }
 
-// ==================== CARGAR Y MOSTRAR DONACIONES ====================
-// Cargar y mostrar donaciones
+// ==================== CARGAR DONACIONES ====================
+// Cargar donaciones en tiempo real
 const listaDonaciones = document.getElementById('listaDonaciones');
-
 if(listaDonaciones){
   const q = query(collection(db, 'Donaciones'), orderBy('fecha', 'desc'));
   
   onSnapshot(q, (snapshot) => {
-    if(snapshot.empty){
-      listaDonaciones.innerHTML = '<p class="muted" style="text-align:center;padding:20px">No hay donaciones registradas aún</p>';
-      actualizarTotales(0, 0, 0, 0, 0, 0, {});
-      return;
-    }
-
     let html = '<div class="donaciones-grid">';
+    
     let totalOfrendas = 0;
     let totalAportes = 0;
     let conteo = 0;
     let cantidadOfrendas = 0;
     let cantidadAportes = 0;
-    let congregaciones = {}; // Objeto para agrupar por congregación
+    
+    // Objeto para almacenar totales por congregación
+    const congregaciones = {};
 
     snapshot.forEach(docSnap => {
       const d = docSnap.data();
       conteo++;
-      
-      // Calcular totales
-      const ofrendaSolidaria = d.ofrendaSolidaria || 0;
-      const aporteIndividual = d.aporteIndividual || 0;
+
+      const ofrendaSolidaria = Number(d.ofrendaSolidaria || 0);
+      const aporteIndividual = Number(d.aporteIndividual || 0);
+      const total = ofrendaSolidaria + aporteIndividual;
+
+      // Acumular totales generales
       totalOfrendas += ofrendaSolidaria;
       totalAportes += aporteIndividual;
       
-      // Contar cantidades
-      if(d.tieneAportePersonal){
-        cantidadAportes++;
-      } else {
-        cantidadOfrendas++;
-      }
-      
-      // Agrupar por congregación
-      const nombreCong = d.nombreCongregacion || 'Sin nombre';
-      if(!congregaciones[nombreCong]){
+      if (ofrendaSolidaria > 0) cantidadOfrendas++;
+      if (aporteIndividual > 0) cantidadAportes++;
+
+      // Acumular por congregación
+      const nombreCong = d.nombreCongregacion || 'Sin congregación';
+      if (!congregaciones[nombreCong]) {
         congregaciones[nombreCong] = {
           totalSolidario: 0,
           totalIndividual: 0,
@@ -440,23 +443,24 @@ if(listaDonaciones){
         };
       }
       
-      if(d.tieneAportePersonal){
-        congregaciones[nombreCong].totalIndividual += aporteIndividual;
-        congregaciones[nombreCong].cantidadIndividual++;
-      } else {
+      if (ofrendaSolidaria > 0) {
         congregaciones[nombreCong].totalSolidario += ofrendaSolidaria;
         congregaciones[nombreCong].cantidadSolidario++;
       }
       
-      const total = ofrendaSolidaria + aporteIndividual;
-      
-      // Si es aporte personal, mostrar nombre, congregación, valor y fecha
-      if(d.tieneAportePersonal && d.aportePersonal){
+      if (aporteIndividual > 0) {
+        congregaciones[nombreCong].totalIndividual += aporteIndividual;
+        congregaciones[nombreCong].cantidadIndividual++;
+      }
+
+      // Renderizar tarjeta
+      if(d.tieneAportePersonal){
+        // Tarjeta de aporte personal
         html += `
           <div class="donacion-card aporte-personal-card">
             <div class="donacion-header">
               <div>
-                <h3>👤 ${d.aportePersonal}</h3>
+                <h3>👤 ${d.aportePersonal || 'Aporte Personal'}</h3>
                 <p class="muted">⛪ ${d.nombreCongregacion || 'Sin congregación'}</p>
                 <p class="muted">📅 ${d.diaSemana || ''} • ${d.fecha}</p>
               </div>
@@ -475,7 +479,7 @@ if(listaDonaciones){
               ` : ''}
             </div>
             
-            <div class="donacion-actions">
+            <div class="donacion-actions" style="display: ${esUsuarioAdmin ? 'flex' : 'none'}">
               <button class="btn edit" onclick="editarDonacion('${docSnap.id}')">✏️ Editar</button>
               <button class="btn delete" onclick="eliminarDonacion('${docSnap.id}', '${d.fotoPath || ''}')">🗑️ Eliminar</button>
             </div>
@@ -505,7 +509,7 @@ if(listaDonaciones){
               </div>
             </div>
             
-            <div class="donacion-actions">
+            <div class="donacion-actions" style="display: ${esUsuarioAdmin ? 'flex' : 'none'}">
               <button class="btn edit" onclick="editarDonacion('${docSnap.id}')">✏️ Editar</button>
               <button class="btn delete" onclick="eliminarDonacion('${docSnap.id}', '${d.fotoPath || ''}')">🗑️ Eliminar</button>
             </div>
@@ -591,6 +595,11 @@ window.verFoto = function(url){
 // ==================== EDITAR DONACIÓN ====================
 // Editar donación
 window.editarDonacion = async function(id){
+  // Verificar permisos
+  if (!verificarPermisosAccion('editar donaciones')) {
+    return;
+  }
+  
   try{
     const ref = doc(db, 'Donaciones', id);
     const snap = await getDoc(ref);
@@ -654,6 +663,11 @@ window.editarDonacion = async function(id){
 // ==================== ELIMINAR DONACIÓN ====================
 // Eliminar donación
 window.eliminarDonacion = async function(id, fotoPath){
+  // Verificar permisos
+  if (!verificarPermisosAccion('eliminar donaciones')) {
+    return;
+  }
+  
   try{
     const conf = confirm('⚠️ ¿Está seguro de eliminar esta donación?');
     if(!conf) return;
