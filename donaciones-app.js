@@ -542,7 +542,8 @@ function actualizarTotales(ofrendas, aportes, general, cantidad, cantOfrendas, c
   // Actualizar tabla de congregaciones
   const tablaCongregaciones = document.getElementById('tablaCongregaciones');
   if(tablaCongregaciones && congregaciones){
-    let htmlTabla = '<table class="tabla-congregaciones">';
+    let htmlTabla = '<div class="tabla-congregaciones-container">';
+    htmlTabla += '<table class="tabla-congregaciones">';
     htmlTabla += `
       <thead>
         <tr>
@@ -576,7 +577,7 @@ function actualizarTotales(ofrendas, aportes, general, cantidad, cantOfrendas, c
       `;
     });
     
-    htmlTabla += '</tbody></table>';
+    htmlTabla += '</tbody></table></div>';
     tablaCongregaciones.innerHTML = htmlTabla;
   }
 }

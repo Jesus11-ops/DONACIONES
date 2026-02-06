@@ -281,11 +281,18 @@ button.secondary, .btn.secondary{
 }
 
 /* ========== TABLA DE CONGREGACIONES ========== */
+.tabla-congregaciones-container{
+  width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  margin-top:16px;
+}
+
 .tabla-congregaciones{
   width:100%;
   border-collapse:collapse;
-  margin-top:16px;
   font-size:0.95rem;
+  min-width:600px;
 }
 
 .tabla-congregaciones thead{
@@ -298,6 +305,7 @@ button.secondary, .btn.secondary{
   text-align:left;
   font-weight:600;
   font-size:0.9rem;
+  white-space:nowrap;
 }
 
 .tabla-congregaciones tbody tr{
@@ -315,11 +323,13 @@ button.secondary, .btn.secondary{
 
 .tabla-congregaciones td{
   padding:12px;
+  white-space:nowrap;
 }
 
 .tabla-congregaciones .cong-nombre{
   font-weight:600;
   color:#1f2937;
+  min-width:150px;
 }
 
 .tabla-congregaciones .cong-valor{
@@ -339,6 +349,47 @@ button.secondary, .btn.secondary{
   font-weight:700;
   color:#2b6cb0;
   font-size:1.05rem;
+}
+
+/* Indicador de scroll en móviles */
+@media (max-width:768px){
+  .tabla-congregaciones-container{
+    position:relative;
+    box-shadow:inset -10px 0 10px -10px rgba(0,0,0,0.1);
+  }
+  
+  .tabla-congregaciones-container::after{
+    content:'← Desliza →';
+    position:absolute;
+    bottom:8px;
+    right:8px;
+    background:rgba(43,108,176,0.9);
+    color:white;
+    padding:4px 12px;
+    border-radius:20px;
+    font-size:0.75rem;
+    font-weight:600;
+    pointer-events:none;
+    animation:fadeSlide 2s ease-in-out infinite;
+  }
+  
+  .tabla-congregaciones{
+    font-size:0.85rem;
+  }
+  
+  .tabla-congregaciones th{
+    padding:10px 8px;
+    font-size:0.8rem;
+  }
+  
+  .tabla-congregaciones td{
+    padding:10px 8px;
+  }
+}
+
+@keyframes fadeSlide {
+  0%, 100% { opacity:0.6; }
+  50% { opacity:1; }
 }
 
 /* ========== CARD DE APORTE PERSONAL ========== */
