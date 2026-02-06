@@ -59,6 +59,11 @@
         <h3>👤 Aporte Personal</h3>
         <div class="grid-aporte">
           <div class="form-group">
+            <label>⛪ Congregación</label>
+            <input type="text" id="aportePersonalCongregacion" placeholder="Nombre de la congregación">
+          </div>
+
+          <div class="form-group">
             <label>Nombre de la Persona</label>
             <input type="text" id="aportePersonalNombre" placeholder="Nombre completo">
           </div>
@@ -92,19 +97,26 @@
       <div class="total-box">
         <div class="total-label">Total Ofrendas Solidarias</div>
         <div class="total-value" id="totalOfrendas">$0</div>
+        <div class="total-count" id="cantidadOfrendas">0 aportes</div>
       </div>
       <div class="total-box">
         <div class="total-label">Total Aportes Individuales</div>
         <div class="total-value" id="totalAportes">$0</div>
+        <div class="total-count" id="cantidadAportes">0 aportes</div>
       </div>
       <div class="total-box highlight">
         <div class="total-label">Total Recolectado</div>
         <div class="total-value" id="totalGeneral">$0</div>
+        <div class="total-count" id="totalDonaciones">0 donaciones</div>
       </div>
-      <div class="total-box">
-        <div class="total-label">Total Donaciones</div>
-        <div class="total-value" id="totalDonaciones">0</div>
-      </div>
+    </div>
+  </section>
+
+  <!-- NUEVA SECCIÓN: Totales por Congregación -->
+  <section id="resumenCongregaciones" class="card" style="margin-top:32px">
+    <h2>⛪ Totales por Congregación</h2>
+    <div id="tablaCongregaciones">
+      <!-- Se llenará dinámicamente -->
     </div>
   </section>
 

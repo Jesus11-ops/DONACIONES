@@ -273,6 +273,74 @@ button.secondary, .btn.secondary{
   color:#ffd700;
 }
 
+.total-count{
+  font-size:0.85rem;
+  opacity:0.85;
+  margin-top:6px;
+  font-weight:400;
+}
+
+/* ========== TABLA DE CONGREGACIONES ========== */
+.tabla-congregaciones{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:16px;
+  font-size:0.95rem;
+}
+
+.tabla-congregaciones thead{
+  background:linear-gradient(135deg, #2b6cb0 0%, #2563eb 100%);
+  color:white;
+}
+
+.tabla-congregaciones th{
+  padding:12px;
+  text-align:left;
+  font-weight:600;
+  font-size:0.9rem;
+}
+
+.tabla-congregaciones tbody tr{
+  border-bottom:1px solid #e6e9ef;
+  transition:background-color 0.2s;
+}
+
+.tabla-congregaciones tbody tr:hover{
+  background-color:#f9fafb;
+}
+
+.tabla-congregaciones tbody tr:last-child{
+  border-bottom:2px solid #2b6cb0;
+}
+
+.tabla-congregaciones td{
+  padding:12px;
+}
+
+.tabla-congregaciones .cong-nombre{
+  font-weight:600;
+  color:#1f2937;
+}
+
+.tabla-congregaciones .cong-valor{
+  text-align:right;
+  color:#059669;
+  font-weight:500;
+}
+
+.tabla-congregaciones .cong-cantidad{
+  text-align:center;
+  color:var(--muted);
+  font-size:0.9rem;
+}
+
+.tabla-congregaciones .cong-total{
+  text-align:right;
+  font-weight:700;
+  color:#2b6cb0;
+  font-size:1.05rem;
+}
+
 /* ========== CARD DE APORTE PERSONAL ========== */
 .aporte-personal-card .donacion-header{
   background:linear-gradient(135deg, #2b8a7a 0%, #059669 100%);

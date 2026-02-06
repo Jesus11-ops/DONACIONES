@@ -1,45 +1,65 @@
-# 💰 Sistema de Control de Donaciones
+# 💰 Sistema de Control de Donaciones - ACTUALIZADO
 
 Sistema web para gestionar donaciones de congregaciones con Firebase.
 
-## 📋 Características
+## 🆕 NOVEDADES EN ESTA VERSIÓN
+
+### ✅ Nuevas Funcionalidades:
+
+1. **Campo de Congregación en Aportes Personales**
+   - Ahora cuando registras un aporte personal/individual, también puedes especificar a qué congregación pertenece la persona
+   - Esto permite un mejor seguimiento por congregación
+
+2. **Contadores de Cantidad de Aportes**
+   - El resumen general ahora muestra:
+     - Cantidad de ofrendas solidarias (ej: "7 aportes")
+     - Cantidad de aportes individuales (ej: "5 aportes")
+     - Total de donaciones (suma de ambos)
+
+3. **Tabla de Totales por Congregación**
+   - Nueva sección que muestra un resumen por cada congregación:
+     - Total de ofrendas solidarias y su cantidad
+     - Total de aportes individuales y su cantidad
+     - Total general por congregación
+   - Las congregaciones se ordenan alfabéticamente
+
+## 📋 Características Principales
 
 - ✅ Autenticación de usuarios (máximo 4 usuarios)
-- 📝 Registro de donaciones con:
-  - Nombre de Congregación
-  - Nombre del Pastor
-  - Ofrenda Solidaria
-  - Aporte Personal (opcional)
-  - Foto de comprobante
-- 📊 Exportación a Excel con totales
-- 🔒 Seguridad con Firebase Auth
-- ☁️ Almacenamiento de fotos en Firebase Storage
-- 📱 Diseño responsive
+- ✅ Registro de donaciones con:
+  - **Ofrendas Solidarias** (de congregación)
+    - Nombre de Congregación
+    - Nombre del Pastor
+    - Monto de ofrenda
+  - **Aportes Personales/Individuales** (de personas)
+    - Nombre de la Congregación a la que pertenece
+    - Nombre de la Persona
+    - Monto del aporte
+    - Foto de comprobante (opcional)
+- ✅ Resumen con totales monetarios Y cantidades de aportes
+- ✅ Tabla de totales agrupados por congregación
+- ✅ Exportación a Excel con todos los datos
+- ✅ Almacenamiento de fotos en Firebase Storage
+- ✅ Diseño responsive para móviles y tablets
 
 ## 🚀 Configuración Inicial
 
 ### 1. Crear proyecto en Firebase
 
 1. Ve a [Firebase Console](https://console.firebase.google.com/)
-2. Crea un nuevo proyecto (si aún no lo has hecho) o usa el existente "donaciones-1572f"
+2. Crea un nuevo proyecto o usa el existente "donaciones-1572f"
 3. Habilita los siguientes servicios:
    - **Authentication** → Email/Password
    - **Firestore Database** → Modo producción
    - **Storage** → Modo producción
 
-### 2. Obtener configuración de Firebase
+### 2. Configurar los archivos
 
-1. En Firebase Console, ve a **Configuración del proyecto** (⚙️)
-2. En la sección "Tus aplicaciones", selecciona "Web"
-3. Copia el objeto `firebaseConfig`
+Reemplaza la configuración de Firebase en estos 3 archivos:
 
-### 3. Configurar los archivos
-
-Reemplaza `TU_API_KEY`, `TU_AUTH_DOMAIN`, etc. en estos 3 archivos:
-
-**📁 donaciones-auth.js** (línea 7-13)
-**📁 donaciones-app.js** (línea 7-13)
-**📁 donaciones-exportar.js** (línea 6-12)
+**📁 donaciones-auth.js** (líneas 7-13)
+**📁 donaciones-app.js** (líneas 7-13)
+**📁 donaciones-exportar.js** (líneas 6-12)
 
 ```javascript
 const firebaseConfig = {
@@ -52,32 +72,24 @@ const firebaseConfig = {
 };
 ```
 
-### 4. Configurar reglas de seguridad
+### 3. Configurar reglas de seguridad
 
 #### Firestore Rules
-En Firebase Console → Firestore Database → Reglas:
-
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Colección de donaciones
     match /Donaciones/{document} {
       allow read, write: if request.auth != null;
     }
-    
-    // Colección de usuarios (solo lectura para autenticados)
     match /users/{document} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
   }
 }
 ```
 
 #### Storage Rules
-En Firebase Console → Storage → Reglas:
-
 ```javascript
 rules_version = '2';
 service firebase.storage {
@@ -85,25 +97,18 @@ service firebase.storage {
     match /donaciones/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null 
-        && request.resource.size < 5 * 1024 * 1024  // Máx 5MB
+        && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
   }
 }
 ```
 
-### 5. Crear primer usuario
-
-1. Abre `donaciones-index.html` en tu navegador
-2. Haz clic en "Crear usuario"
-3. Ingresa email y contraseña
-4. El sistema permite máximo 4 usuarios
-
 ## 📂 Estructura de Archivos
 
 ```
 proyecto-donaciones/
-├── donaciones-index.html       # Página de login
+├── index.html                  # Página de login
 ├── donaciones-dashboard.html   # Dashboard principal
 ├── donaciones-auth.js          # Autenticación
 ├── donaciones-app.js           # Lógica principal
@@ -114,8 +119,7 @@ proyecto-donaciones/
 
 ## 🗄️ Estructura de Datos en Firestore
 
-### Colección: `Donaciones`
-
+### Ofrenda Solidaria (Congregación)
 ```javascript
 {
   fecha: "2024-01-15",
@@ -123,92 +127,152 @@ proyecto-donaciones/
   nombreCongregacion: "Congregación Central",
   nombrePastor: "Pastor Juan Pérez",
   ofrendaSolidaria: 5000000,
-  tieneAportePersonal: true,
+  tieneAportePersonal: false,
+  aporteIndividual: 0,
+  createdAt: "2024-01-15T10:30:00.000Z"
+}
+```
+
+### Aporte Personal/Individual
+```javascript
+{
+  fecha: "2024-01-15",
+  diaSemana: "Lunes",
+  nombreCongregacion: "Congregación Norte",  // ← NUEVO: Congregación de la persona
   aportePersonal: "María López",
   aporteIndividual: 500000,
+  tieneAportePersonal: true,
+  ofrendaSolidaria: 0,
+  nombrePastor: "",
   foto: "https://firebasestorage.googleapis.com/...",
   fotoPath: "donaciones/12345_comprobante.jpg",
   createdAt: "2024-01-15T10:30:00.000Z"
 }
 ```
 
-### Colección: `users`
-
-```javascript
-{
-  uid: "abc123...",
-  email: "usuario@ejemplo.com",
-  createdAt: "2024-01-15T10:00:00.000Z"
-}
-```
-
 ## 💡 Uso del Sistema
 
-### Registrar Donación
+### Registrar Ofrenda Solidaria (Congregación)
 
 1. Selecciona la fecha
-2. Ingresa nombre de congregación
-3. Ingresa nombre del pastor
-4. Ingresa monto de ofrenda solidaria
-5. (Opcional) Marca "¿Incluye Aporte Personal?"
-   - Ingresa nombre de la persona
-   - Ingresa monto del aporte
-   - Sube foto del comprobante
-6. Haz clic en "Guardar Donación"
+2. **NO marques** el checkbox "¿Es un Aporte Personal?"
+3. Ingresa:
+   - Nombre de congregación
+   - Nombre del pastor
+   - Monto de ofrenda solidaria
+4. Haz clic en "Guardar Donación"
+
+### Registrar Aporte Personal/Individual
+
+1. Selecciona la fecha
+2. **Marca** el checkbox "¿Es un Aporte Personal?"
+3. Ingresa:
+   - **Congregación a la que pertenece la persona** (NUEVO)
+   - Nombre de la persona
+   - Monto del aporte
+   - (Opcional) Foto del comprobante
+4. Haz clic en "Guardar Donación"
+
+### Ver Resumen General
+
+El sistema muestra automáticamente:
+- **Total de Ofrendas Solidarias**: Suma y cantidad (ej: $5,000,000 - 7 aportes)
+- **Total de Aportes Individuales**: Suma y cantidad (ej: $2,500,000 - 5 aportes)
+- **Total Recolectado**: Suma total y cantidad total
+
+### Ver Totales por Congregación
+
+Debajo del resumen general encontrarás una tabla que muestra:
+- Nombre de cada congregación
+- Total de ofrendas solidarias de esa congregación y cantidad
+- Total de aportes individuales de personas de esa congregación y cantidad
+- Total general por congregación
+
+**Ejemplo de tabla:**
+```
+Congregación        | Ofrendas  | Cant | Aportes Ind | Cant | Total
+--------------------|-----------|------|-------------|------|----------
+Congregación Centro | $5,000,000|  3   | $1,000,000  |  2   | $6,000,000
+Congregación Norte  | $3,000,000|  2   | $500,000    |  1   | $3,500,000
+```
 
 ### Exportar a Excel
 
 1. Haz clic en "Exportar Excel"
-2. Se descargará un archivo con:
-   - Todas las donaciones
-   - Formato profesional con colores
+2. El archivo incluirá:
+   - Todas las donaciones con sus detalles
+   - Nombre de congregación (para ambos tipos)
    - Fila de totales al final
+   - Formato profesional con colores
 
-### Editar/Eliminar
+## 🔄 Diferencias Clave entre Tipos de Donación
 
-- Cada tarjeta de donación tiene botones para editar o eliminar
-- Al eliminar se borra también la foto del Storage
+| Aspecto | Ofrenda Solidaria | Aporte Personal |
+|---------|------------------|-----------------|
+| Congregación | ✅ Obligatorio | ✅ Obligatorio (NUEVO) |
+| Pastor | ✅ Obligatorio | ❌ No aplica |
+| Nombre persona | ❌ No aplica | ✅ Obligatorio |
+| Monto | Ofrenda Solidaria | Aporte Individual |
+| Foto comprobante | ❌ No disponible | ✅ Opcional |
 
-## 🔒 Seguridad
+## 🎯 Casos de Uso Comunes
 
-- ✅ Máximo 4 usuarios
-- ✅ Autenticación requerida para acceder
-- ✅ Reglas de Firestore y Storage configuradas
-- ✅ Fotos limitadas a 5MB
-- ✅ Solo imágenes permitidas
+### Caso 1: Congregación hace ofrenda solidaria
+```
+Tipo: Ofrenda Solidaria
+Congregación: "Congregación Sur"
+Pastor: "Pastor Carlos Gómez"
+Monto: $2,000,000
+```
 
-## 🛠️ Solución de Problemas
+### Caso 2: Persona de una congregación hace aporte personal
+```
+Tipo: Aporte Personal
+Congregación: "Congregación Sur"  ← La persona es de esta congregación
+Persona: "Ana Martínez"
+Monto: $300,000
+Foto: [comprobante.jpg]
+```
 
-### Error: "Firebase: Error (auth/wrong-password)"
-- Verifica que la contraseña sea correcta
-
-### Error: "Missing or insufficient permissions"
-- Verifica que las reglas de Firestore estén publicadas
-- Asegúrate de estar autenticado
-
-### Las fotos no se suben
-- Verifica las reglas de Storage
-- Verifica que el archivo sea una imagen
-- Verifica que sea menor a 5MB
-
-### No puedo crear más usuarios
-- El sistema solo permite 4 usuarios máximo
-- Elimina un usuario existente desde Firebase Console
+**Resultado en la tabla por congregación:**
+```
+Congregación Sur:
+- Ofrendas Solidarias: $2,000,000 (1 aporte)
+- Aportes Individuales: $300,000 (1 aporte)
+- Total: $2,300,000
+```
 
 ## 📱 Compatibilidad
 
 - ✅ Chrome, Firefox, Safari, Edge (versiones recientes)
 - ✅ Dispositivos móviles (iOS, Android)
 - ✅ Tablets
+- ✅ Responsive design
 
-## 📞 Soporte
+## 🔒 Seguridad
 
-Para problemas técnicos:
-1. Revisa la consola del navegador (F12)
-2. Verifica la configuración de Firebase
-3. Verifica que las reglas estén publicadas
+- Máximo 4 usuarios autenticados
+- Reglas de Firestore y Storage configuradas
+- Fotos limitadas a 5MB
+- Solo imágenes permitidas
+
+## 🛠️ Solución de Problemas
+
+### No veo el campo de congregación en aportes personales
+- Verifica que estés usando la versión actualizada del dashboard
+- Asegúrate de marcar el checkbox "¿Es un Aporte Personal?"
+
+### La tabla de congregaciones no se muestra
+- Verifica que haya al menos una donación registrada
+- Revisa la consola del navegador (F12) para errores
+
+### Los contadores no se actualizan
+- Refresca la página
+- Verifica tu conexión a internet
+- Revisa las reglas de Firestore
 
 ---
 
 **Iglesia Pentecostal Unida de Colombia**
 Sistema desarrollado para el control de donaciones
+Versión 2.0 - Con totales por congregación y contadores

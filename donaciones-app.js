@@ -133,8 +133,7 @@ window.toggleTipoDonacion = function(){
       seccionCongregacion.style.display = 'none';
       seccionAportePersonal.style.display = 'block';
       
-      // Limpiar campos de congregación
-      document.getElementById('nombreCongregacion').value = '';
+      // Limpiar solo campos específicos de congregación (pastor y ofrenda solidaria)
       document.getElementById('nombrePastor').value = '';
       document.getElementById('ofrendaSolidaria').value = '0';
       document.getElementById('ofrendaSolidariaValue').value = '0';
@@ -144,6 +143,7 @@ window.toggleTipoDonacion = function(){
       seccionAportePersonal.style.display = 'none';
       
       // Limpiar campos de aporte personal
+      document.getElementById('aportePersonalCongregacion').value = '';
       document.getElementById('aportePersonalNombre').value = '';
       document.getElementById('aporteIndividual').value = '0';
       document.getElementById('aporteIndividualValue').value = '0';
@@ -217,9 +217,17 @@ window.guardarDonacion = async function(){
 
     if(esAportePersonal){
       // Es un aporte personal
+      const aportePersonalCongregacion = document.getElementById('aportePersonalCongregacion').value;
       const aportePersonalNombre = document.getElementById('aportePersonalNombre').value;
       const aporteIndividual = obtenerValorNumerico(document.getElementById('aporteIndividual').value);
       const fotoFile = document.getElementById('foto').files[0];
+
+      if(!aportePersonalCongregacion.trim()){
+        alert('⚠️ Ingrese el nombre de la congregación');
+        btnGuardar.disabled = false;
+        btnGuardar.textContent = textoOriginal;
+        return;
+      }
 
       if(!aportePersonalNombre.trim()){
         alert('⚠️ Ingrese el nombre de la persona que hace el aporte');
@@ -238,7 +246,7 @@ window.guardarDonacion = async function(){
       donacion.aportePersonal = aportePersonalNombre.trim();
       donacion.aporteIndividual = aporteIndividual;
       donacion.ofrendaSolidaria = 0;
-      donacion.nombreCongregacion = 'Aporte Personal';
+      donacion.nombreCongregacion = aportePersonalCongregacion.trim();
       donacion.nombrePastor = '';
 
       // Subir foto si existe
@@ -345,7 +353,7 @@ window.guardarDonacion = async function(){
 
 // ==================== LIMPIAR FORMULARIO ====================
 function limpiarFormulario(){
-  const campos = ['fecha', 'nombreCongregacion', 'nombrePastor', 'aportePersonalNombre'];
+  const campos = ['fecha', 'nombreCongregacion', 'nombrePastor', 'aportePersonalCongregacion', 'aportePersonalNombre'];
   campos.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
@@ -392,7 +400,7 @@ if(listaDonaciones){
   onSnapshot(q, (snapshot) => {
     if(snapshot.empty){
       listaDonaciones.innerHTML = '<p class="muted" style="text-align:center;padding:20px">No hay donaciones registradas aún</p>';
-      actualizarTotales(0, 0, 0, 0);
+      actualizarTotales(0, 0, 0, 0, 0, 0, {});
       return;
     }
 
@@ -400,6 +408,9 @@ if(listaDonaciones){
     let totalOfrendas = 0;
     let totalAportes = 0;
     let conteo = 0;
+    let cantidadOfrendas = 0;
+    let cantidadAportes = 0;
+    let congregaciones = {}; // Objeto para agrupar por congregación
 
     snapshot.forEach(docSnap => {
       const d = docSnap.data();
@@ -411,15 +422,42 @@ if(listaDonaciones){
       totalOfrendas += ofrendaSolidaria;
       totalAportes += aporteIndividual;
       
+      // Contar cantidades
+      if(d.tieneAportePersonal){
+        cantidadAportes++;
+      } else {
+        cantidadOfrendas++;
+      }
+      
+      // Agrupar por congregación
+      const nombreCong = d.nombreCongregacion || 'Sin nombre';
+      if(!congregaciones[nombreCong]){
+        congregaciones[nombreCong] = {
+          totalSolidario: 0,
+          totalIndividual: 0,
+          cantidadSolidario: 0,
+          cantidadIndividual: 0
+        };
+      }
+      
+      if(d.tieneAportePersonal){
+        congregaciones[nombreCong].totalIndividual += aporteIndividual;
+        congregaciones[nombreCong].cantidadIndividual++;
+      } else {
+        congregaciones[nombreCong].totalSolidario += ofrendaSolidaria;
+        congregaciones[nombreCong].cantidadSolidario++;
+      }
+      
       const total = ofrendaSolidaria + aporteIndividual;
       
-      // Si es aporte personal, mostrar solo nombre, valor y fecha
+      // Si es aporte personal, mostrar nombre, congregación, valor y fecha
       if(d.tieneAportePersonal && d.aportePersonal){
         html += `
           <div class="donacion-card aporte-personal-card">
             <div class="donacion-header">
               <div>
                 <h3>👤 ${d.aportePersonal}</h3>
+                <p class="muted">⛪ ${d.nombreCongregacion || 'Sin congregación'}</p>
                 <p class="muted">📅 ${d.diaSemana || ''} • ${d.fecha}</p>
               </div>
               <div class="donacion-total">$${aporteIndividual.toLocaleString('es-CO')}</div>
@@ -480,22 +518,67 @@ if(listaDonaciones){
     listaDonaciones.innerHTML = html;
     
     // Actualizar totales
-    actualizarTotales(totalOfrendas, totalAportes, totalOfrendas + totalAportes, conteo);
+    actualizarTotales(totalOfrendas, totalAportes, totalOfrendas + totalAportes, conteo, cantidadOfrendas, cantidadAportes, congregaciones);
   });
 }
 
 // ==================== ACTUALIZAR TOTALES ====================
 // Función para actualizar los totales en el resumen
-function actualizarTotales(ofrendas, aportes, general, cantidad){
+function actualizarTotales(ofrendas, aportes, general, cantidad, cantOfrendas, cantAportes, congregaciones){
   const totalOfrendasEl = document.getElementById('totalOfrendas');
   const totalAportesEl = document.getElementById('totalAportes');
   const totalGeneralEl = document.getElementById('totalGeneral');
   const totalDonacionesEl = document.getElementById('totalDonaciones');
+  const cantidadOfrendasEl = document.getElementById('cantidadOfrendas');
+  const cantidadAportesEl = document.getElementById('cantidadAportes');
   
   if(totalOfrendasEl) totalOfrendasEl.textContent = `$${ofrendas.toLocaleString('es-CO')}`;
   if(totalAportesEl) totalAportesEl.textContent = `$${aportes.toLocaleString('es-CO')}`;
   if(totalGeneralEl) totalGeneralEl.textContent = `$${general.toLocaleString('es-CO')}`;
-  if(totalDonacionesEl) totalDonacionesEl.textContent = cantidad;
+  if(totalDonacionesEl) totalDonacionesEl.textContent = `${cantidad} donaciones`;
+  if(cantidadOfrendasEl) cantidadOfrendasEl.textContent = `${cantOfrendas} aportes`;
+  if(cantidadAportesEl) cantidadAportesEl.textContent = `${cantAportes} aportes`;
+  
+  // Actualizar tabla de congregaciones
+  const tablaCongregaciones = document.getElementById('tablaCongregaciones');
+  if(tablaCongregaciones && congregaciones){
+    let htmlTabla = '<table class="tabla-congregaciones">';
+    htmlTabla += `
+      <thead>
+        <tr>
+          <th>Congregación</th>
+          <th>Ofrendas Solidarias</th>
+          <th>Cantidad</th>
+          <th>Aportes Individuales</th>
+          <th>Cantidad</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
+    
+    // Ordenar congregaciones alfabéticamente
+    const congregacionesOrdenadas = Object.keys(congregaciones).sort();
+    
+    congregacionesOrdenadas.forEach(nombre => {
+      const cong = congregaciones[nombre];
+      const totalCong = cong.totalSolidario + cong.totalIndividual;
+      
+      htmlTabla += `
+        <tr>
+          <td class="cong-nombre">${nombre}</td>
+          <td class="cong-valor">$${cong.totalSolidario.toLocaleString('es-CO')}</td>
+          <td class="cong-cantidad">${cong.cantidadSolidario}</td>
+          <td class="cong-valor">$${cong.totalIndividual.toLocaleString('es-CO')}</td>
+          <td class="cong-cantidad">${cong.cantidadIndividual}</td>
+          <td class="cong-total">$${totalCong.toLocaleString('es-CO')}</td>
+        </tr>
+      `;
+    });
+    
+    htmlTabla += '</tbody></table>';
+    tablaCongregaciones.innerHTML = htmlTabla;
+  }
 }
 
 // ==================== VER FOTO ====================
