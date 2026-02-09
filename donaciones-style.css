@@ -285,6 +285,7 @@ button.secondary, .btn.secondary{
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .filtro-btn {
@@ -298,6 +299,7 @@ button.secondary, .btn.secondary{
   font-size: 0.9rem;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .filtro-btn:hover {
@@ -388,16 +390,23 @@ button.secondary, .btn.secondary{
 
 /* Indicador de scroll en móviles */
 @media (max-width:768px){
+  /* Ajustes para el header de la sección de congregaciones */
+  #resumenCongregaciones > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
   .filtros-container {
     width: 100%;
-    justify-content: center;
+    gap: 6px;
   }
   
   .filtro-btn {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 12px;
-    font-size: 0.8rem;
+    flex: 1 1 auto;
+    min-width: calc(33.33% - 4px);
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    text-align: center;
   }
   
   .tabla-congregaciones-container{
@@ -612,6 +621,22 @@ footer{
     font-size:1.5rem;
   }
   
+  /* Ajustes específicos para la sección de congregaciones */
+  #resumenCongregaciones h2 {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+  }
+  
+  .filtros-container {
+    gap: 6px;
+  }
+  
+  .filtro-btn {
+    padding: 8px 6px;
+    font-size: 0.7rem;
+    min-width: calc(33.33% - 4px);
+  }
+  
   .donacion-header{
     flex-direction:column;
   }
@@ -628,6 +653,20 @@ footer{
     flex-direction:column;
     align-items:flex-start;
     gap:4px;
+  }
+  
+  /* Hacer la tabla más compacta en móviles */
+  .tabla-congregaciones {
+    font-size: 0.75rem;
+  }
+  
+  .tabla-congregaciones th,
+  .tabla-congregaciones td {
+    padding: 8px 6px;
+  }
+  
+  .tabla-congregaciones th {
+    font-size: 0.7rem;
   }
 }
 
