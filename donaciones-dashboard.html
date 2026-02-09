@@ -112,9 +112,24 @@
     </div>
   </section>
 
-  <!-- NUEVA SECCIÓN: Totales por Congregación -->
+  <!-- NUEVA SECCIÓN: Totales por Congregación CON FILTROS -->
   <section id="resumenCongregaciones" class="card" style="margin-top:32px">
-    <h2>⛪ Totales por Congregación</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+      <h2 style="margin: 0;">⛪ Totales por Congregación</h2>
+      
+      <div class="filtros-container">
+        <button class="filtro-btn active" data-filtro="todos" onclick="filtrarCongregaciones('todos')">
+          📊 Todos
+        </button>
+        <button class="filtro-btn" data-filtro="ofrendas" onclick="filtrarCongregaciones('ofrendas')">
+          ⛪ Ofrendas Solidarias
+        </button>
+        <button class="filtro-btn" data-filtro="aportes" onclick="filtrarCongregaciones('aportes')">
+          👤 Aportes Individuales
+        </button>
+      </div>
+    </div>
+    
     <div id="tablaCongregaciones">
       <!-- Se llenará dinámicamente -->
     </div>

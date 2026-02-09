@@ -27,6 +27,10 @@ const ADMIN_EMAIL = 'J3006091729@gmail.com';
 // Variable global para almacenar si el usuario actual es admin
 let esUsuarioAdmin = false;
 
+// Variables globales para filtrado de congregaciones
+let congregacionesGlobal = {};
+let filtroActual = 'todos';
+
 // Función para verificar si el usuario actual es admin
 function verificarPermisos(userEmail) {
   esUsuarioAdmin = userEmail?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
@@ -543,11 +547,41 @@ function actualizarTotales(ofrendas, aportes, general, cantidad, cantOfrendas, c
   if(cantidadOfrendasEl) cantidadOfrendasEl.textContent = `${cantOfrendas} aportes`;
   if(cantidadAportesEl) cantidadAportesEl.textContent = `${cantAportes} aportes`;
   
-  // Actualizar tabla de congregaciones
+  // Guardar congregaciones globalmente
+  congregacionesGlobal = congregaciones || {};
+  
+  // Actualizar tabla de congregaciones con el filtro actual
+  actualizarTablaCongregaciones();
+}
+
+// ==================== FILTRAR CONGREGACIONES ====================
+// Función para filtrar congregaciones según el tipo seleccionado
+window.filtrarCongregaciones = function(tipo) {
+  filtroActual = tipo;
+  
+  // Actualizar botones activos
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if(btn.getAttribute('data-filtro') === tipo) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Actualizar tabla
+  actualizarTablaCongregaciones();
+}
+
+// ==================== ACTUALIZAR TABLA CONGREGACIONES ====================
+// Función para actualizar la tabla de congregaciones según el filtro
+function actualizarTablaCongregaciones() {
   const tablaCongregaciones = document.getElementById('tablaCongregaciones');
-  if(tablaCongregaciones && congregaciones){
-    let htmlTabla = '<div class="tabla-congregaciones-container">';
-    htmlTabla += '<table class="tabla-congregaciones">';
+  if(!tablaCongregaciones || !congregacionesGlobal) return;
+  
+  let htmlTabla = '<div class="tabla-congregaciones-container">';
+  htmlTabla += '<table class="tabla-congregaciones">';
+  
+  // Definir encabezados según el filtro
+  if(filtroActual === 'todos') {
     htmlTabla += `
       <thead>
         <tr>
@@ -559,16 +593,44 @@ function actualizarTotales(ofrendas, aportes, general, cantidad, cantOfrendas, c
           <th>Total</th>
         </tr>
       </thead>
-      <tbody>
     `;
+  } else if(filtroActual === 'ofrendas') {
+    htmlTabla += `
+      <thead>
+        <tr>
+          <th>Congregación</th>
+          <th>Ofrendas Solidarias</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+    `;
+  } else if(filtroActual === 'aportes') {
+    htmlTabla += `
+      <thead>
+        <tr>
+          <th>Congregación</th>
+          <th>Aportes Individuales</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+    `;
+  }
+  
+  htmlTabla += '<tbody>';
+  
+  // Ordenar congregaciones alfabéticamente
+  const congregacionesOrdenadas = Object.keys(congregacionesGlobal).sort();
+  
+  // Filtrar y mostrar según selección
+  congregacionesOrdenadas.forEach(nombre => {
+    const cong = congregacionesGlobal[nombre];
+    const totalCong = cong.totalSolidario + cong.totalIndividual;
     
-    // Ordenar congregaciones alfabéticamente
-    const congregacionesOrdenadas = Object.keys(congregaciones).sort();
+    // Aplicar filtros
+    if(filtroActual === 'ofrendas' && cong.totalSolidario === 0) return;
+    if(filtroActual === 'aportes' && cong.totalIndividual === 0) return;
     
-    congregacionesOrdenadas.forEach(nombre => {
-      const cong = congregaciones[nombre];
-      const totalCong = cong.totalSolidario + cong.totalIndividual;
-      
+    if(filtroActual === 'todos') {
       htmlTabla += `
         <tr>
           <td class="cong-nombre">${nombre}</td>
@@ -579,11 +641,27 @@ function actualizarTotales(ofrendas, aportes, general, cantidad, cantOfrendas, c
           <td class="cong-total">$${totalCong.toLocaleString('es-CO')}</td>
         </tr>
       `;
-    });
-    
-    htmlTabla += '</tbody></table></div>';
-    tablaCongregaciones.innerHTML = htmlTabla;
-  }
+    } else if(filtroActual === 'ofrendas') {
+      htmlTabla += `
+        <tr>
+          <td class="cong-nombre">${nombre}</td>
+          <td class="cong-valor">$${cong.totalSolidario.toLocaleString('es-CO')}</td>
+          <td class="cong-cantidad">${cong.cantidadSolidario}</td>
+        </tr>
+      `;
+    } else if(filtroActual === 'aportes') {
+      htmlTabla += `
+        <tr>
+          <td class="cong-nombre">${nombre}</td>
+          <td class="cong-valor">$${cong.totalIndividual.toLocaleString('es-CO')}</td>
+          <td class="cong-cantidad">${cong.cantidadIndividual}</td>
+        </tr>
+      `;
+    }
+  });
+  
+  htmlTabla += '</tbody></table></div>';
+  tablaCongregaciones.innerHTML = htmlTabla;
 }
 
 // ==================== VER FOTO ====================

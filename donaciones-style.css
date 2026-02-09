@@ -281,6 +281,41 @@ button.secondary, .btn.secondary{
 }
 
 /* ========== TABLA DE CONGREGACIONES ========== */
+.filtros-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filtro-btn {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 2px solid transparent;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filtro-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.filtro-btn.active {
+  background: linear-gradient(135deg, #2b6cb0 0%, #2563eb 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(43, 108, 176, 0.3);
+}
+
+.filtro-btn.active:hover {
+  background: linear-gradient(135deg, #1e5a94 0%, #1d4ed8 100%);
+}
+
 .tabla-congregaciones-container{
   width:100%;
   overflow-x:auto;
@@ -353,6 +388,18 @@ button.secondary, .btn.secondary{
 
 /* Indicador de scroll en móviles */
 @media (max-width:768px){
+  .filtros-container {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filtro-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+  
   .tabla-congregaciones-container{
     position:relative;
     box-shadow:inset -10px 0 10px -10px rgba(0,0,0,0.1);
