@@ -8,12 +8,29 @@ Sistema web para gestionar donaciones de congregaciones con Firebase.
 
 Cada donación ahora tiene un **ID numérico único y secuencial** que aparece en:
 - 🏷️ Badge dorado en la esquina superior de cada tarjeta de registro  
-- 📊 Columna "IDs" en la tabla de congregaciones (filtros Ofrendas/Aportes)
+- 📊 Columna "ID" en la tabla de congregaciones (todos los filtros)
 - 💡 Facilita la relación visual entre la tabla resumen y las tarjetas detalladas
 
-**Ejemplo:**
-- Tarjeta muestra: `#15 👤 María López`
-- Tabla muestra: `María López (#15)` o en columna IDs: `#15, #16`
+### ✅ IDs Clickeables - Navegación Directa 🎯
+
+**¡NUEVA FUNCIONALIDAD!** Los IDs en la tabla ahora son **clickeables/tappables**:
+
+- **En Desktop:** Haz clic en cualquier ID (ej: `#21`) en la tabla
+- **En Móvil:** Toca cualquier ID en la tabla con tu dedo
+- **Resultado:** Scroll automático y suave hacia la tarjeta correspondiente
+- **Efecto Visual:** La tarjeta se ilumina brevemente con un borde dorado
+
+**Ejemplo de uso:**
+1. Ves en la tabla: ID `#15, #21, #33`
+2. Tocas/clickeas el `#21`
+3. La página hace scroll automático a la tarjeta #21
+4. La tarjeta se destaca con un efecto visual por 2 segundos
+
+**Perfecto para:**
+- ✅ Verificar rápidamente una donación específica
+- ✅ Navegar entre muchas donaciones sin hacer scroll manual
+- ✅ Uso táctil en tablets y móviles
+- ✅ Auditorías y revisiones rápidas
 
 ### ✅ Columna "Donante" en Tabla de Congregaciones
 
@@ -61,26 +78,29 @@ Ahora puedes:
 
 ## 🎯 Ejemplos de Uso de los IDs
 
-### Caso 1: Verificar un aporte específico
+### Caso 1: Verificar un aporte específico (CON CLICKS)
 ```
 Usuario: "Quiero verificar el aporte de María López"
 1. Ir a tabla de congregaciones
 2. Click en filtro "👤 Individuales"
 3. Buscar congregación de María
-4. Ver en columna "ID": "#15, #16" y en columna "Donante": "María López, Juan Pérez"
-5. Identificar que María es el #15 (primer nombre, primer ID)
-6. Scroll abajo y buscar tarjeta con badge "#15"
-7. Verificar monto y detalles
+4. Ver en columna "ID": "#15, #16" 
+5. CLICK o TAP directamente en "#15"
+6. ¡Scroll automático a la tarjeta #15!
+7. La tarjeta se ilumina 2 segundos
+8. Verificar monto y detalles
 ```
 
-### Caso 2: Revisar todas las ofrendas de una congregación
+### Caso 2: Revisar todas las ofrendas de una congregación (CON CLICKS)
 ```
 1. Tabla → filtro "⛪ Solidarias"
 2. Ver congregación "IPUC Centro"
 3. Columna "ID" muestra: "#5, #12, #18"
-4. Scroll abajo
-5. Ubicar tarjetas #5, #12 y #18
-6. Revisar fechas y montos
+4. CLICK en "#5" → Scroll automático a tarjeta #5
+5. Volver arriba
+6. CLICK en "#12" → Scroll automático a tarjeta #12
+7. Repetir con "#18"
+8. ¡Sin scroll manual! 🎯
 ```
 5. Revisar fechas y montos
 ```

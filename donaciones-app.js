@@ -486,7 +486,7 @@ if(listaDonaciones){
       if(d.tieneAportePersonal){
         // Tarjeta de aporte personal
         html += `
-          <div class="donacion-card aporte-personal-card">
+          <div id="donacion-${donacionID}" class="donacion-card aporte-personal-card">
             <div class="donacion-header">
               <div>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
@@ -520,7 +520,7 @@ if(listaDonaciones){
       } else {
         // Donación normal (congregación)
         html += `
-          <div class="donacion-card">
+          <div id="donacion-${donacionID}" class="donacion-card">
             <div class="donacion-header">
               <div>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
@@ -668,8 +668,8 @@ function actualizarTablaCongregaciones() {
     if(filtroActual === 'aportes' && cong.totalIndividual === 0) return;
     
     if(filtroActual === 'todos') {
-      // Generar lista de IDs y donantes (solo nombres, sin duplicar IDs)
-      const todosLosIDs = cong.donacionesIDs.map(id => `#${id}`).join(', ');
+      // Generar lista de IDs clickeables y donantes (solo nombres, sin duplicar IDs)
+      const todosLosIDs = cong.donacionesIDs.map(id => `<a href="#donacion-${id}" class="id-link" onclick="scrollToDonacion(${id})">#${id}</a>`).join(', ');
       const listaDonantes = cong.personas.length > 0 
         ? cong.personas.map(p => p.nombre).join(', ')
         : '-';
@@ -687,13 +687,13 @@ function actualizarTablaCongregaciones() {
         </tr>
       `;
     } else if(filtroActual === 'ofrendas') {
-      // Para ofrendas mostrar pastor e IDs
+      // Para ofrendas mostrar pastor e IDs clickeables
       const pastor = donacionesGlobal.find(d => d.congregacion === nombre && d.data.nombrePastor)?.data.nombrePastor || '-';
       const ids = cong.donacionesIDs.filter((id, index, self) => {
         // Filtrar solo IDs de ofrendas solidarias
         const donacion = donacionesGlobal.find(d => d.id === id);
         return donacion && donacion.data.ofrendaSolidaria > 0;
-      }).map(id => `#${id}`).join(', ');
+      }).map(id => `<a href="#donacion-${id}" class="id-link" onclick="scrollToDonacion(${id})">#${id}</a>`).join(', ');
       
       htmlTabla += `
         <tr>
@@ -705,9 +705,9 @@ function actualizarTablaCongregaciones() {
         </tr>
       `;
     } else if(filtroActual === 'aportes') {
-      // Para aportes mostrar donantes (solo nombres) e IDs
+      // Para aportes mostrar donantes (solo nombres) e IDs clickeables
       const donantes = cong.personas.map(p => p.nombre).join(', ');
-      const ids = cong.personas.map(p => `#${p.id}`).join(', ');
+      const ids = cong.personas.map(p => `<a href="#donacion-${p.id}" class="id-link" onclick="scrollToDonacion(${p.id})">#${p.id}</a>`).join(', ');
       
       htmlTabla += `
         <tr>
@@ -831,5 +831,33 @@ window.eliminarDonacion = async function(id, fotoPath){
   }catch(err){
     console.error(err);
     alert('❌ Error al eliminar: ' + err.message);
+  }
+}
+
+// ==================== SCROLL A DONACIÓN ====================
+// Función para hacer scroll suave a una tarjeta específica
+window.scrollToDonacion = function(donacionID) {
+  // Prevenir comportamiento por defecto del link
+  event.preventDefault();
+  
+  // Buscar el elemento con ese ID
+  const elemento = document.getElementById(`donacion-${donacionID}`);
+  
+  if (elemento) {
+    // Hacer scroll suave
+    elemento.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'center' 
+    });
+    
+    // Agregar efecto de highlight temporal
+    elemento.classList.add('highlight-donacion');
+    
+    // Remover el highlight después de 2 segundos
+    setTimeout(() => {
+      elemento.classList.remove('highlight-donacion');
+    }, 2000);
+  } else {
+    console.warn(`No se encontró la donación con ID: ${donacionID}`);
   }
 }
