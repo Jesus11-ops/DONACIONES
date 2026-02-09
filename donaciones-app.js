@@ -30,6 +30,7 @@ let esUsuarioAdmin = false;
 // Variables globales para filtrado de congregaciones
 let congregacionesGlobal = {};
 let filtroActual = 'todos';
+let donacionesGlobal = [];  // NUEVO v3.0: Almacena donaciones con IDs numéricos para relacionar tabla y tarjetas
 
 // Función para verificar si el usuario actual es admin
 function verificarPermisos(userEmail) {
@@ -420,10 +421,15 @@ if(listaDonaciones){
     
     // Objeto para almacenar totales por congregación
     const congregaciones = {};
+    
+    // NUEVO v3.0: Resetear y llenar array global de donaciones con IDs
+    donacionesGlobal = [];
+    let donacionID = 0;
 
     snapshot.forEach(docSnap => {
       const d = docSnap.data();
       conteo++;
+      donacionID++;  // ID numérico secuencial
 
       const ofrendaSolidaria = Number(d.ofrendaSolidaria || 0);
       const aporteIndividual = Number(d.aporteIndividual || 0);
@@ -443,19 +449,38 @@ if(listaDonaciones){
           totalSolidario: 0,
           totalIndividual: 0,
           cantidadSolidario: 0,
-          cantidadIndividual: 0
+          cantidadIndividual: 0,
+          personas: [],  // NUEVO v3.0: Lista de personas que aportaron
+          donacionesIDs: []  // NUEVO v3.0: IDs de donaciones para relacionar
         };
       }
       
       if (ofrendaSolidaria > 0) {
         congregaciones[nombreCong].totalSolidario += ofrendaSolidaria;
         congregaciones[nombreCong].cantidadSolidario++;
+        congregaciones[nombreCong].donacionesIDs.push(donacionID);
       }
       
       if (aporteIndividual > 0) {
         congregaciones[nombreCong].totalIndividual += aporteIndividual;
         congregaciones[nombreCong].cantidadIndividual++;
+        congregaciones[nombreCong].personas.push({
+          id: donacionID,
+          nombre: d.aportePersonal || 'Sin nombre',
+          monto: aporteIndividual
+        });
+        congregaciones[nombreCong].donacionesIDs.push(donacionID);
       }
+      
+      // NUEVO v3.0: Guardar en array global para búsqueda rápida
+      donacionesGlobal.push({
+        id: donacionID,
+        firestoreId: docSnap.id,
+        data: d,
+        congregacion: nombreCong,
+        persona: d.aportePersonal || '',
+        total: total
+      });
 
       // Renderizar tarjeta
       if(d.tieneAportePersonal){
@@ -464,7 +489,10 @@ if(listaDonaciones){
           <div class="donacion-card aporte-personal-card">
             <div class="donacion-header">
               <div>
-                <h3>👤 ${d.aportePersonal || 'Aporte Personal'}</h3>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span class="donacion-id-badge">#${donacionID}</span>
+                  <h3 style="margin: 0;">👤 ${d.aportePersonal || 'Aporte Personal'}</h3>
+                </div>
                 <p class="muted">⛪ ${d.nombreCongregacion || 'Sin congregación'}</p>
                 <p class="muted">📅 ${d.diaSemana || ''} • ${d.fecha}</p>
               </div>
@@ -495,7 +523,10 @@ if(listaDonaciones){
           <div class="donacion-card">
             <div class="donacion-header">
               <div>
-                <h3>⛪ ${d.nombreCongregacion}</h3>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span class="donacion-id-badge">#${donacionID}</span>
+                  <h3 style="margin: 0;">⛪ ${d.nombreCongregacion}</h3>
+                </div>
                 <p class="muted">📅 ${d.diaSemana || ''} • ${d.fecha}</p>
               </div>
               <div class="donacion-total">$${total.toLocaleString('es-CO')}</div>
@@ -585,11 +616,13 @@ function actualizarTablaCongregaciones() {
     htmlTabla += `
       <thead>
         <tr>
+          <th>ID</th>
           <th>Congregación</th>
+          <th>Donante</th>
           <th>Ofrendas Solidarias</th>
-          <th>Cantidad</th>
+          <th>Cant.</th>
           <th>Aportes Individuales</th>
-          <th>Cantidad</th>
+          <th>Cant.</th>
           <th>Total</th>
         </tr>
       </thead>
@@ -598,9 +631,11 @@ function actualizarTablaCongregaciones() {
     htmlTabla += `
       <thead>
         <tr>
+          <th>ID</th>
           <th>Congregación</th>
+          <th>Pastor</th>
           <th>Ofrendas Solidarias</th>
-          <th>Cantidad</th>
+          <th>Cant.</th>
         </tr>
       </thead>
     `;
@@ -608,9 +643,11 @@ function actualizarTablaCongregaciones() {
     htmlTabla += `
       <thead>
         <tr>
+          <th>ID</th>
           <th>Congregación</th>
+          <th>Donante</th>
           <th>Aportes Individuales</th>
-          <th>Cantidad</th>
+          <th>Cant.</th>
         </tr>
       </thead>
     `;
@@ -631,9 +668,17 @@ function actualizarTablaCongregaciones() {
     if(filtroActual === 'aportes' && cong.totalIndividual === 0) return;
     
     if(filtroActual === 'todos') {
+      // Generar lista de IDs y donantes (solo nombres, sin duplicar IDs)
+      const todosLosIDs = cong.donacionesIDs.map(id => `#${id}`).join(', ');
+      const listaDonantes = cong.personas.length > 0 
+        ? cong.personas.map(p => p.nombre).join(', ')
+        : '-';
+      
       htmlTabla += `
         <tr>
+          <td class="cong-ids">${todosLosIDs || '-'}</td>
           <td class="cong-nombre">${nombre}</td>
+          <td class="cong-donante" title="${listaDonantes}">${listaDonantes}</td>
           <td class="cong-valor">$${cong.totalSolidario.toLocaleString('es-CO')}</td>
           <td class="cong-cantidad">${cong.cantidadSolidario}</td>
           <td class="cong-valor">$${cong.totalIndividual.toLocaleString('es-CO')}</td>
@@ -642,17 +687,33 @@ function actualizarTablaCongregaciones() {
         </tr>
       `;
     } else if(filtroActual === 'ofrendas') {
+      // Para ofrendas mostrar pastor e IDs
+      const pastor = donacionesGlobal.find(d => d.congregacion === nombre && d.data.nombrePastor)?.data.nombrePastor || '-';
+      const ids = cong.donacionesIDs.filter((id, index, self) => {
+        // Filtrar solo IDs de ofrendas solidarias
+        const donacion = donacionesGlobal.find(d => d.id === id);
+        return donacion && donacion.data.ofrendaSolidaria > 0;
+      }).map(id => `#${id}`).join(', ');
+      
       htmlTabla += `
         <tr>
+          <td class="cong-ids">${ids || '-'}</td>
           <td class="cong-nombre">${nombre}</td>
+          <td class="cong-donante">${pastor}</td>
           <td class="cong-valor">$${cong.totalSolidario.toLocaleString('es-CO')}</td>
           <td class="cong-cantidad">${cong.cantidadSolidario}</td>
         </tr>
       `;
     } else if(filtroActual === 'aportes') {
+      // Para aportes mostrar donantes (solo nombres) e IDs
+      const donantes = cong.personas.map(p => p.nombre).join(', ');
+      const ids = cong.personas.map(p => `#${p.id}`).join(', ');
+      
       htmlTabla += `
         <tr>
+          <td class="cong-ids">${ids || '-'}</td>
           <td class="cong-nombre">${nombre}</td>
+          <td class="cong-donante" title="${donantes}">${donantes}</td>
           <td class="cong-valor">$${cong.totalIndividual.toLocaleString('es-CO')}</td>
           <td class="cong-cantidad">${cong.cantidadIndividual}</td>
         </tr>
